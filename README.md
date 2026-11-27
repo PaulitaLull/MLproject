@@ -195,7 +195,7 @@ Comparación inicial, sin ajustar, con validación cruzada (F1 macro): LightGBM 
 | No concentrado | 433 | 0,46 | 0,59 | 0,52 |
 | Concentrado | 2.041 | 0,91 | 0,85 | 0,88 |
 
-`F1_macro` = **0,70.**, `AUC` = **0,742**.
+`F1_macro` = **0,70.**, `AUC` = **0,79**.
 
 **Test (619 clips):**
 
@@ -268,6 +268,7 @@ Comparación inicial, sin ajustar, con validación cruzada (F1 macro): LightGBM 
 - Cálculo de intervalos de confianza y errores.
 - Probar una validación agrupada por secuencia (`clip_sequence_id`) frente a por alumno.
 - Añadir como variables el contexto de los clips anteriores del mismo alumno, sin usar series temporales.
+- Probar a darle al modelo todas las características de entrada, aun con correlaciones entre ellas del 0.99, y añadiendo en la optimización de hiperparámetros un selector de las más significativas para el modelo (penalizando las que menos aportan) para comparar los resultados y variables escogidas.
 - Construir un modelo con dos pasos (¿concentrado?, y si no, ¿qué emoción?).
 
 ---
@@ -281,14 +282,19 @@ Comparación inicial, sin ajustar, con validación cruzada (F1 macro): LightGBM 
 │   ├── train/        # 2.474 clips de entrenamiento
 │   └── test/         # 619 clips de test
 ├── notebooks/
-│   ├── main_binario.ipynb      # modelo binario
-│   └── main_multiclase.ipynb   # modelo multiclase
+│   ├── main_binario.ipynb           # modelo binario
+│   └── main_multiclase.ipynb        # modelo multiclase
+│   └── main_multiclase_todas.ipynb  # modelo multiclase con todas las variables de comportamiento del
+|                                     dataset original y a cambio, penalización incluida en el propio modelo.
 ├── src/
-│   ├── pipe_preproc_training.py
-│   └── evaluation.py
+│   ├── train_multiclase.py          # preprocesado + training 
+│   ├── train_binario.py             # preprocesado + training 
+│   └── evaluation_multiclase.py 
+│   └── evaluation_binario.py     
 ├── modelos/
-│   ├── final_model_multiclase.pkl # modelo multiclase
-│   └── final_model_binario.pkl    # modelo binario
+│   ├── final_model_multiclase.pkl               # modelo multiclase
+│   ├── final_model_multiclase_todasvars.pkl     # modelo multiclase entrenado con todas las variables
+│   └── final_model_binario.pkl                  # modelo binario
 ├── imgs/
 ├── articulos_y_exploracion/
 │   
@@ -301,16 +307,27 @@ Los modelos se guardan como **pipeline completo** (preprocesado + modelo) con `j
 
 ## 9. Cómo ejecutar el proyecto
 
+0. **Asegurarse de usar la misma estructura de carpetas indicadas en la estructura del repositorio.** Son la que esperan los archivos para poder ejecutarse.
 1. **Descargar los datos** desde el enlace del apartado 2 y colocar `affect_features_and_labels_folded_all_timesteps.csv` en `data/raw/`.
-2. **Instalar las dependencias** (Python 3 con Jupyter):
-   ```
-   pip install pandas numpy scikit-learn lightgbm matplotlib joblib jupyter
-   ```
-3. **Ejecutar los main**: Celda por celda para ver todo el proceso en cada uno de los dos enfoques: predicción multiclase y binaria.
-4. **Usar un modelo guardado:**
+2. **Para instalar las dependencias (Python 3 con Jupyter), hay 2 opciones**:
+  - Crea un entorno virtual, actívalo e instala las dependencias desde `requirements.txt`:
+
+         ```
+         bash
+         python -m venv .venv
+         .venv\Scripts\activate
+         pip install -r requirements.txt
+         ```
+
+  - Instala directamente las siguientes dependencias: 
+         ```
+         pip install pandas numpy scikit-learn lightgbm matplotlib joblib jupyter
+         ```
+3. **Para ver el proceso**: Ejecutar los notebooks celda por celda en cada uno de los dos enfoques: predicción multiclase y binaria.
+4. **Para usar un modelo guardado:**
    ```python
    import joblib
-   modelo = joblib.load("models/final_model_binario.pkl")
+   modelo = joblib.load("modelos/final_model_binario.pkl")
    prediccion = modelo.predict(X_nuevo)    # X_nuevo con las mismas columnas que train!!!
    ```
 
